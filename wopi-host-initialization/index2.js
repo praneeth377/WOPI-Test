@@ -16,7 +16,7 @@ app.use(bodyParser.raw({ type: 'application/octet-stream', limit: '50mb' }));
 
 // CORS middleware
 app.use(cors({
-    origin: 'https://*.officeapps.live.com',
+    origin: '*',
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
@@ -122,7 +122,7 @@ app.get('/generate-token', (req, res) => {
     const token = jwt.sign(
         { fileId, userId, permissions: 'read-write' },
         secret,
-        { expiresIn: '1h' }
+        { expiresIn: '3h' }
     );
 
     const wopiSrc = encodeURIComponent(`http://localhost:3000/wopi/files/${fileId}`);
