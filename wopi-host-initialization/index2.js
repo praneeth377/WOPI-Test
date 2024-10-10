@@ -11,10 +11,8 @@ const filePath = path.join(__dirname, 'Sample Data.xlsx');
 
 let lockStatus = { locked: false, lockId: null };
 
-// Middleware to parse raw body for file uploads
 app.use(bodyParser.raw({ type: 'application/octet-stream', limit: '50mb' }));
 
-// CORS middleware
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'OPTIONS'],
@@ -22,21 +20,7 @@ app.use(cors({
     credentials: true,
 }));
 
-// Middleware to authenticate JWT
-const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) return res.sendStatus(401); // Unauthorized if no token is provided
-
-    jwt.verify(token, secret, (err, user) => {
-        if (err) return res.sendStatus(403); // Forbidden if token is invalid
-        req.user = user;
-        next();
-    });
-};
-
-// Endpoint: CheckFileInfo (provides metadata about the file)
+// Endpoint: CheckFileInfo
 app.get('/wopi/files/:fileId', (req, res) => {
     const fileStats = fs.statSync(filePath);
     const fileInfo = {
@@ -67,7 +51,7 @@ app.get('/wopi/files/:fileId', (req, res) => {
 });
 
 // Endpoint: GetFile (returns the actual file contents)
-app.get('/wopi/files/:fileId/contents', authenticateToken, (req, res) => {
+app.get('/wopi/files/:fileId/contents', (req, res) => {
     // Read the file and stream it back to the client
     const fileStream = fs.createReadStream(filePath);
     res.setHeader('Content-Disposition', 'attachment; filename="Sample Data.xlsx"');
@@ -75,7 +59,7 @@ app.get('/wopi/files/:fileId/contents', authenticateToken, (req, res) => {
 });
 
 // Endpoint: PutFile (saves the updated file content after editing)
-app.post('/wopi/files/:fileId/contents', authenticateToken, (req, res) => {
+app.post('/wopi/files/:fileId/contents', (req, res) => {
     const writeStream = fs.createWriteStream(filePath);
     req.pipe(writeStream);
     writeStream.on('finish', () => {
@@ -88,7 +72,7 @@ app.post('/wopi/files/:fileId/contents', authenticateToken, (req, res) => {
 });
 
 // Endpoint for locking the file
-app.post('/wopi/files/:fileId/lock', authenticateToken, (req, res) => {
+app.post('/wopi/files/:fileId/lock', (req, res) => {
     const lockId = req.headers['x-wopi-lock'];
 
     if (!lockId || lockStatus.locked) {
@@ -104,7 +88,7 @@ app.post('/wopi/files/:fileId/lock', authenticateToken, (req, res) => {
 });
 
 // Endpoint for unlocking the file
-app.post('/wopi/files/:fileId/unlock', authenticateToken, (req, res) => {
+app.post('/wopi/files/:fileId/unlock', (req, res) => {
     const lockId = req.headers['x-wopi-lock'];
 
     if (lockStatus.lockId !== lockId) {
@@ -131,7 +115,6 @@ app.get('/generate-token', (req, res) => {
     res.json({ token, excelUrl });
 });
 
-// Start the server
 app.listen(3000, () => {
     console.log('WOPI Host is running on http://localhost:3000');
 });
